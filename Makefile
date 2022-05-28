@@ -12,14 +12,15 @@ NPX = npx
 # TypeScript
 #
 
-TS_FILES   = $(shell find $(SRC) -name '*.ts' -type f)
-TS_TARGETS = $(patsubst $(SRC)/%.ts, $(BUILD)/%.js, $(TS_FILES))
+TS_ENTRY  = $(SRC)/rpn-calc.ts
+TS_FILES  = $(shell find $(SRC) -name '*.ts' -type f)
+TS_TARGET = $(patsubst $(SRC)/%.ts, $(BUILD)/%.js, $(TS_ENTRY))
 
 TSC       = $(NPX) tsc
 TSC_ARGS += --rootDir $(SRC)
 TSC_ARGS += --outDir $(BUILD)
 
-$(BUILD)/%.js: $(SRC)/%.ts
+$(TS_TARGET): $(TS_FILES)
 	mkdir -p $(BUILD)
 	echo "Compiling Typescript code..."
 	$(TSC) $(TSC_ARGS)
@@ -49,7 +50,7 @@ JEST_ARGS += --config $(JEST_CONFIG)
 
 .PHONY: build test test-style test-unit
 
-build: $(TS_TARGETS)
+build: $(TS_TARGET)
 
 test: test-style test-unit
 
