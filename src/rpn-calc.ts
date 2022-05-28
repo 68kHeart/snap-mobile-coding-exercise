@@ -15,7 +15,14 @@ const repl = Readline.createInterface({
 
 repl.on('line', (commands: string) => {
   const output = RPN.evaluate(commands);
-  console.log('[', output.join(', '), ']');
+
+  if (output === null) {
+    console.error('Invalid input');
+  }
+  else {
+    console.log('[', output.join(', '), ']');
+  }
+
   repl.prompt();
 });
 
