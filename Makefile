@@ -1,6 +1,7 @@
 # Directories
 
 SRC   = src
+TESTS = tests
 BUILD = build
 
 # Binaries
@@ -34,21 +35,37 @@ ESLINT       = $(NPX) eslint
 ESLINT_ARGS += --config $(ESLINT_CONFIG)
 
 #
+# Jest
+#
+
+JEST_CONFIG = jest.config.json
+
+JEST       = $(NPX) jest
+JEST_ARGS += --config $(JEST_CONFIG)
+
+#
 # Targets
 #
 
-.PHONY: build test
+.PHONY: build test test-style test-unit
 
 build: $(TS_TARGETS)
 
-test: $(ESLINT_CONFIG) $(TS_FILES)
+test: test-style test-unit
+
+test-style: $(ESLINT_CONFIG) $(TS_FILES)
 	echo "Checking code style..."
 	$(ESLINT) $(ESLINT_ARGS) $(TS_FILES)
 	echo "Code style is good!"
+
+test-unit: $(JEST_CONFIG) $(TEST_FILES)
+	echo "Performing unit tests..."
+	$(JEST) $(JEST_ARGS) $(TESTS) # 1>/dev/null
+	echo "Unit tests passed!"
+	
 
 # Shh! (Unless we specify VERBOSE when invoking make)
 
 ifndef VERBOSE
 .SILENT:
 endif
-    

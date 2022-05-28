@@ -1,0 +1,9 @@
+{
+    "bail": 1,
+    "moduleFileExtensions": ["js", "ts"],
+    "transform": {
+        ".ts": "ts-jest"
+    },
+    "testRegex": ["/tests/.*\\.test\\.ts$"],
+    "verbose": true
+}

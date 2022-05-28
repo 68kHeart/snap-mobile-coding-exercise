@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import Readline from 'node:readline';
+import RPN from './lib/rpn';
 
 // Initialize the REPL interface
 
@@ -13,7 +14,8 @@ const repl = Readline.createInterface({
 // Process input as we get it, line by line
 
 repl.on('line', (commands: string) => {
-  console.log(commands);
+  const output = RPN.evaluate(commands);
+  console.log('[', output.join(', '), ']');
   repl.prompt();
 });
 
