@@ -1,23 +1,25 @@
 import Internal from './rpn/internal';
-import { type Operation } from './rpn/operation';
 
-// EVALUATOR
+// MODEL
 
-function evaluate(input: string): Readonly<Array<Operation>> | null {
-  const parts = input.split(' ').filter((s) => s !== '');
-  const result = parts.map(Internal.parse);
+const initialModel = Object.freeze([0]);
 
-  if (result.includes(null)) {
-    return null;
+// UPDATE
+
+function update(input: string, stack: Readonly<Array<number>>): Readonly<Array<number>> {
+  const maybeOperations = Internal.parse(input);
+
+  if (maybeOperations === null) {
+    return stack;
   }
   else {
-    // We have to unsafely assert the type of `result`.
-    return Object.freeze(result as Array<Operation>);
+    return Object.freeze(Internal.evaluate(maybeOperations, stack));
   }
 }
 
 // EXPORTS
 
 export default {
-  evaluate,
+  initialModel,
+  update,
 };

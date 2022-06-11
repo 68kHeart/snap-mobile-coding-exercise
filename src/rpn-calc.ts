@@ -3,6 +3,10 @@
 import Readline from 'node:readline';
 import RPN from './lib/rpn';
 
+// Initialize data model
+
+let stack = RPN.initialModel;
+
 // Initialize the REPL interface
 
 const repl = Readline.createInterface({
@@ -14,36 +18,14 @@ const repl = Readline.createInterface({
 // Process input as we get it, line by line
 
 repl.on('line', (commands: string) => {
-  const ops = RPN.evaluate(commands);
+  const newStack = RPN.update(commands, stack);
 
-  if (ops === null) {
+  if (stack === newStack) {
     console.error('Invalid input');
   }
   else {
-    const output = ops.map((op) => {
-      switch (op.kind) {
-        case 'Op/Add':
-          return '+';
-
-        case 'Op/Subtract':
-          return '-';
-
-        case 'Op/Multiply':
-          return '*';
-
-        case 'Op/Divide':
-          return '/';
-
-        case 'Op/Push':
-          return op.value.toString();
-
-        // Impossible state, but the style checker demands it. :(
-        default:
-          return '';
-      }
-    });
-
-    console.log(output);
+    stack = newStack;
+    console.log(stack[0]);
   }
 
   repl.prompt();
