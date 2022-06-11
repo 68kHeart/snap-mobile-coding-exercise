@@ -29,7 +29,7 @@ Subtraction    | `-`    | `6 2 - == 4`
 Multiplication | `*`    | `6 2 * == 12`
 Division       | `/`    | `6 2 / == 3`
 
-When you are finished, you can type `Control + C` or `Control + D` to exit the program.
+When you are finished, you can type `q`, `Control + C` or `Control + D` to exit the program.
 
 ## Design and Architecture
 

@@ -18,6 +18,10 @@ const repl = Readline.createInterface({
 // Process input as we get it, line by line
 
 repl.on('line', (commands: string) => {
+  if (commands === 'q') {
+    repl.close();
+  }
+
   const newStack = RPN.update(commands, stack);
 
   if (stack === newStack) {
