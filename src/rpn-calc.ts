@@ -14,13 +14,36 @@ const repl = Readline.createInterface({
 // Process input as we get it, line by line
 
 repl.on('line', (commands: string) => {
-  const output = RPN.evaluate(commands);
+  const ops = RPN.evaluate(commands);
 
-  if (output === null) {
+  if (ops === null) {
     console.error('Invalid input');
   }
   else {
-    console.log('[', output.join(', '), ']');
+    const output = ops.map((op) => {
+      switch (op.kind) {
+        case 'Op/Add':
+          return '+';
+
+        case 'Op/Subtract':
+          return '-';
+
+        case 'Op/Multiply':
+          return '*';
+
+        case 'Op/Divide':
+          return '/';
+
+        case 'Op/Push':
+          return op.value.toString();
+
+        // Impossible state, but the style checker demands it. :(
+        default:
+          return '';
+      }
+    });
+
+    console.log(output);
   }
 
   repl.prompt();
