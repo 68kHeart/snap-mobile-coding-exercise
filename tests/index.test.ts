@@ -1,5 +1,6 @@
 const Fuzz = require('jest-fuzz');
 
+import { Stack } from 'immutable';
 import API from '../src/lib/rpn';
 import Op from '../src/lib/rpn/operation';
 import Internal from '../src/lib/rpn/internal';
@@ -93,14 +94,16 @@ describe('Reverse Polish Notation library', () => {
 
   describe('Evaluator', () => {
     test('No operations on the initial model produces no changes', () => {
-      expect(Internal.evaluate([], API.initialModel)).toBe(API.initialModel);
+      // TODO: Stacks are converted, so they aren't the same reference yet
+      expect(Internal.evaluate([], API.initialModel)).toEqual(API.initialModel);
     });
 
     Fuzz.test(
       'No operations on arbitrary stacks produces no changes',
       stackFuzzer,
       (stack: Array<number>) => {
-        expect(Internal.evaluate([], stack)).toBe(stack);
+        // TODO: Stacks are converted, so they aren't the same reference yet
+        expect(Internal.evaluate([], stack)).toEqual(stack);
       },
     );
 
@@ -108,7 +111,7 @@ describe('Reverse Polish Notation library', () => {
       'Push operation pushes a number on the stack',
       Fuzz.float(),
       (n: number) => {
-        expect(Internal.evaluatePush(n, API.initialModel))
+        expect(Internal.evaluatePush(n, Stack(API.initialModel)).toArray())
           .toEqual([n, ...API.initialModel]);
       },
     );
@@ -121,11 +124,11 @@ describe('Reverse Polish Notation library', () => {
         const addend = floatGenerator();
         const sum = augend + addend;
 
-        let stack = API.initialModel;
+        let stack = Stack(API.initialModel);
         stack = Internal.evaluatePush(augend, stack);
         stack = Internal.evaluatePush(addend, stack);
 
-        let newStack = API.initialModel;
+        let newStack = Stack(API.initialModel);
         newStack = Internal.evaluatePush(sum, newStack);
 
         expect(Internal.evaluateAdd(stack)).toEqual(newStack);
@@ -140,11 +143,11 @@ describe('Reverse Polish Notation library', () => {
         const subtrahend = floatGenerator();
         const difference = minuend - subtrahend;
 
-        let stack = API.initialModel;
+        let stack = Stack(API.initialModel);
         stack = Internal.evaluatePush(minuend, stack);
         stack = Internal.evaluatePush(subtrahend, stack);
 
-        let newStack = API.initialModel;
+        let newStack = Stack(API.initialModel);
         newStack = Internal.evaluatePush(difference, newStack);
 
         expect(Internal.evaluateSubtract(stack)).toEqual(newStack);
@@ -159,11 +162,11 @@ describe('Reverse Polish Notation library', () => {
         const multiplicand = floatGenerator();
         const product = multiplier * multiplicand;
 
-        let stack = API.initialModel;
+        let stack = Stack(API.initialModel);
         stack = Internal.evaluatePush(multiplier, stack);
         stack = Internal.evaluatePush(multiplicand, stack);
 
-        let newStack = API.initialModel;
+        let newStack = Stack(API.initialModel);
         newStack = Internal.evaluatePush(product, newStack);
 
         expect(Internal.evaluateMultiply(stack)).toEqual(newStack);
@@ -178,11 +181,11 @@ describe('Reverse Polish Notation library', () => {
         const divisor = floatGenerator();
         const quotient = dividend / divisor;
 
-        let stack = API.initialModel;
+        let stack = Stack(API.initialModel);
         stack = Internal.evaluatePush(dividend, stack);
         stack = Internal.evaluatePush(divisor, stack);
 
-        let newStack = API.initialModel;
+        let newStack = Stack(API.initialModel);
         newStack = Internal.evaluatePush(quotient, newStack);
 
         expect(Internal.evaluateDivide(stack)).toEqual(newStack);
@@ -205,17 +208,25 @@ describe('Reverse Polish Notation library', () => {
         [5 + 8, ...API.initialModel],
       ];
 
+      let migrationSteps = steps.map(Stack);
+
+      describe('Migration steps', () => {
+        test('are equivalent to original steps', () => {
+          expect(migrationSteps.map((s) => s.toArray())).toEqual(steps);
+        });
+      });
+
       test('Via evaluations', () => {
-        let stack = steps[0];
+        let stack = migrationSteps[0];
 
         stack = Internal.evaluatePush(5, stack);
-        expect(stack).toEqual(steps[1]);
+        expect(stack).toEqual(migrationSteps[1]);
 
         stack = Internal.evaluatePush(8, stack);
-        expect(stack).toEqual(steps[2]);
+        expect(stack).toEqual(migrationSteps[2]);
 
         stack = Internal.evaluateAdd(stack);
-        expect(stack).toEqual(steps[3]);
+        expect(stack).toEqual(migrationSteps[3]);
       });
 
       test('Via parsing', () => {
@@ -243,8 +254,16 @@ describe('Reverse Polish Notation library', () => {
         [((5 - (5 + (5 + 8))) + 13), ...API.initialModel],
       ];
 
+      let migrationSteps = steps.map(Stack);
+
+      describe('Migration steps', () => {
+        test('are equivalent to original steps', () => {
+          expect(migrationSteps.map((s) => s.toArray())).toEqual(steps);
+        });
+      });
+
       test('Via evaluations', () => {
-        let stack = steps[0];
+        let stack = migrationSteps[0];
 
         stack = Internal.evaluatePush(5, stack);
         stack = Internal.evaluatePush(5, stack);
@@ -253,11 +272,11 @@ describe('Reverse Polish Notation library', () => {
         stack = Internal.evaluateAdd(stack);
         stack = Internal.evaluateAdd(stack);
         stack = Internal.evaluateSubtract(stack);
-        expect(stack).toEqual(steps[1]);
+        expect(stack).toEqual(migrationSteps[1]);
 
         stack = Internal.evaluatePush(13, stack);
         stack = Internal.evaluateAdd(stack);
-        expect(stack).toEqual(steps[2]);
+        expect(stack).toEqual(migrationSteps[2]);
       });
 
       test('Via parsing', () => {
@@ -291,23 +310,31 @@ describe('Reverse Polish Notation library', () => {
         [((-3.0 * -2.0) + 5.0), ...API.initialModel],
       ];
 
+      let migrationSteps = steps.map(Stack);
+
+      describe('Migration steps', () => {
+        test('are equivalent to original steps', () => {
+          expect(migrationSteps.map((s) => s.toArray())).toEqual(steps);
+        });
+      });
+
       test('Via evaluations', () => {
-        let stack = steps[0];
+        let stack = migrationSteps[0];
 
         stack = Internal.evaluatePush(-3, stack);
-        expect(stack).toEqual(steps[1]);
+        expect(stack).toEqual(migrationSteps[1]);
 
         stack = Internal.evaluatePush(-2, stack);
-        expect(stack).toEqual(steps[2]);
+        expect(stack).toEqual(migrationSteps[2]);
 
         stack = Internal.evaluateMultiply(stack);
-        expect(stack).toEqual(steps[3]);
+        expect(stack).toEqual(migrationSteps[3]);
 
         stack = Internal.evaluatePush(5, stack);
-        expect(stack).toEqual(steps[4]);
+        expect(stack).toEqual(migrationSteps[4]);
 
         stack = Internal.evaluateAdd(stack);
-        expect(stack).toEqual(steps[5]);
+        expect(stack).toEqual(migrationSteps[5]);
       });
 
       test('Via parsing', () => {
@@ -350,23 +377,31 @@ describe('Reverse Polish Notation library', () => {
         [(5 / (9 - 1)), ...API.initialModel],
       ];
 
+      let migrationSteps = steps.map(Stack);
+
+      describe('Migration steps', () => {
+        test('are equivalent to original steps', () => {
+          expect(migrationSteps.map((s) => s.toArray())).toEqual(steps);
+        });
+      });
+
       test('Via evaluations', () => {
-        let stack = steps[0];
+        let stack = migrationSteps[0];
 
         stack = Internal.evaluatePush(5, stack);
-        expect(stack).toEqual(steps[1]);
+        expect(stack).toEqual(migrationSteps[1]);
 
         stack = Internal.evaluatePush(9, stack);
-        expect(stack).toEqual(steps[2]);
+        expect(stack).toEqual(migrationSteps[2]);
 
         stack = Internal.evaluatePush(1, stack);
-        expect(stack).toEqual(steps[3]);
+        expect(stack).toEqual(migrationSteps[3]);
 
         stack = Internal.evaluateSubtract(stack);
-        expect(stack).toEqual(steps[4]);
+        expect(stack).toEqual(migrationSteps[4]);
 
         stack = Internal.evaluateDivide(stack);
-        expect(stack).toEqual(steps[5]);
+        expect(stack).toEqual(migrationSteps[5]);
       });
 
       test('Via parsing', () => {

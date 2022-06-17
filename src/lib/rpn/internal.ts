@@ -70,43 +70,38 @@ function parse(input: string): Array<Operation> | null {
 
 // EVALUATOR
 
-function evaluateAdd(arr: Readonly<Array<number>>): Readonly<Array<number>> {
-  const stack = Stack(arr);
+function evaluateAdd(stack: Stack<number>): Stack<number> {
   const [addend = 0, augend = 0] = stack.take(2);
 
-  return stack.skip(2).push(augend + addend).toArray();
+  return stack.skip(2).push(augend + addend);
 }
 
-function evaluateSubtract(arr: Readonly<Array<number>>): Readonly<Array<number>> {
-  const stack = Stack(arr);
+function evaluateSubtract(stack: Stack<number>): Stack<number> {
   const [subtrahend = 0, minuend = 0] = stack.take(2);
 
-  return stack.skip(2).push(minuend - subtrahend).toArray();
+  return stack.skip(2).push(minuend - subtrahend);
 }
 
-function evaluateMultiply(arr: Readonly<Array<number>>): Readonly<Array<number>> {
-  const stack = Stack(arr);
+function evaluateMultiply(stack: Stack<number>): Stack<number> {
   const [multiplicand = 0, multiplier = 0] = stack.take(2);
 
-  return stack.skip(2).push(multiplier * multiplicand).toArray();
+  return stack.skip(2).push(multiplier * multiplicand);
 }
 
-function evaluateDivide(arr: Readonly<Array<number>>): Readonly<Array<number>> {
-  const stack = Stack(arr);
+function evaluateDivide(stack: Stack<number>): Stack<number> {
   const [divisor = 0, dividend = 0] = stack.take(2);
 
   // We could throw an error on division by zero, but just using zero is fine.
   if (divisor === 0) {
-    return stack.skip(2).push(0).toArray();
+    return stack.skip(2).push(0);
   }
   else {
-    return stack.skip(2).push(dividend / divisor).toArray();
+    return stack.skip(2).push(dividend / divisor);
   }
 }
 
-function evaluatePush(n: number, arr: Readonly<Array<number>>): Readonly<Array<number>> {
-  const stack = Stack(arr);
-  return stack.push(n).toArray();
+function evaluatePush(n: number, stack: Stack<number>): Stack<number> {
+  return stack.push(n);
 }
 
 function evaluate(
@@ -134,7 +129,7 @@ function evaluate(
       default:
         return newStack;
     }
-  }, stack);
+  }, Stack(stack)).toArray();
 }
 
 // EXPORTS

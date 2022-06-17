@@ -1,4 +1,5 @@
 import { Stack } from 'immutable';
+import Op, { type Operation } from '../src/lib/rpn/operation';
 import Internal from '../src/lib/rpn/internal';
 
 const Fuzz = require('jest-fuzz');
@@ -16,6 +17,11 @@ type StackPushInput = {
   value: number,
 };
 
+type EvaluatorInput = {
+  operations: Array<Operation>,
+  stack: Array<number>,
+};
+
 // FUZZERS
 
 // jest-fuzz's float fuzzer includes NaN and Infinity; we do not.
@@ -23,6 +29,26 @@ const floatFuzzer = Fuzz.float({
   min: Number.MIN_SAFE_INTEGER,
   max: Number.MAX_SAFE_INTEGER,
 });
+
+const operationFuzzer = Fuzz.Fuzzer(() => {
+  const kindFuzzer = Fuzz.int({ min: 1, max: 5 });
+  switch (kindFuzzer()) {
+    case 1:
+      return Op.Add;
+
+    case 2:
+      return Op.Subtract;
+
+    case 3:
+      return Op.Multiply;
+
+    case 4:
+      return Op.Divide;
+
+    case 5:
+      return Op.Push(floatFuzzer());
+  }
+})
 
 const stackFuzzer = Fuzz.array({
   type: floatFuzzer,
@@ -37,6 +63,14 @@ const stackArithmeticFuzzer = Fuzz.Fuzzer({
 const stackPushFuzzer = Fuzz.Fuzzer({
   stack: stackFuzzer,
   value: floatFuzzer,
+});
+
+const evaluatorFuzzer = Fuzz.Fuzzer({
+  operations: Fuzz.array({
+    type: operationFuzzer,
+    minLength: 1,
+  }),
+  stack: stackFuzzer,
 });
 
 // REFERENCE IMPLEMENTATIONS
@@ -79,6 +113,34 @@ function referenceEvaluatePush(n: number, stack: Readonly<Array<number>>): Reado
   return [n, ...stack];
 }
 
+function referenceEvaluate(
+  operations: Readonly<Array<Operation>>,
+  stack: Readonly<Array<number>>,
+): Readonly<Array<number>> {
+  return operations.reduce((newStack, op) => {
+    switch (op.kind) {
+      case 'Op/Add':
+        return referenceEvaluateAdd(newStack);
+
+      case 'Op/Subtract':
+        return referenceEvaluateSubtract(newStack);
+
+      case 'Op/Multiply':
+        return referenceEvaluateMultiply(newStack);
+
+      case 'Op/Divide':
+        return referenceEvaluateDivide(newStack);
+
+      case 'Op/Push':
+        return referenceEvaluatePush(op.value, newStack);
+
+      // An impossible state, but the style checker demands it. :(
+      default:
+        return newStack;
+    }
+  }, stack);
+}
+
 // TESTS
 
 describe('Migrations', () => {
@@ -92,7 +154,7 @@ describe('Migrations', () => {
           input.unshift(augend);
           input.unshift(addend);
 
-          expect(Internal.evaluateAdd(input))
+          expect(Internal.evaluateAdd(Stack(input)).toArray())
             .toEqual(referenceEvaluateAdd(input));
         },
       );
@@ -107,7 +169,7 @@ describe('Migrations', () => {
           input.unshift(minuend);
           input.unshift(subtrahend);
 
-          expect(Internal.evaluateSubtract(input))
+          expect(Internal.evaluateSubtract(Stack(input)).toArray())
             .toEqual(referenceEvaluateSubtract(input));
         },
       );
@@ -122,7 +184,7 @@ describe('Migrations', () => {
           input.unshift(multiplier);
           input.unshift(multiplicand);
 
-          expect(Internal.evaluateMultiply(input))
+          expect(Internal.evaluateMultiply(Stack(input)).toArray())
             .toEqual(referenceEvaluateMultiply(input));
         },
       );
@@ -137,7 +199,7 @@ describe('Migrations', () => {
           input.unshift(dividend);
           input.unshift(divisor);
 
-          expect(Internal.evaluateDivide(input))
+          expect(Internal.evaluateDivide(Stack(input)).toArray())
             .toEqual(referenceEvaluateDivide(input));
         },
       );
@@ -151,8 +213,28 @@ describe('Migrations', () => {
           const input = Array.from(stack);
           input.unshift(value);
 
-          expect(Internal.evaluatePush(value, input))
+          expect(Internal.evaluatePush(value, Stack(input)).toArray())
             .toEqual(referenceEvaluatePush(value, input));
+        },
+      );
+    });
+
+    describe('evaluate()', () => {
+      Fuzz.test(
+        'matches original implementation',
+        evaluatorFuzzer(),
+        ({ operations, stack }: EvaluatorInput) => {
+          expect(Internal.evaluate(operations, stack))
+            .toEqual(referenceEvaluate(operations, stack));
+        },
+      );
+
+      Fuzz.test(
+        'matches original implementation when given no operations',
+        stackFuzzer,
+        (stack: Array<number>) => {
+          expect(Internal.evaluate([], stack))
+            .toEqual(referenceEvaluate([], stack));
         },
       );
     });
