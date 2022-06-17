@@ -1,3 +1,4 @@
+import { Stack } from 'immutable';
 import Op, { type Operation } from './operation';
 
 // CONSTANTS
@@ -69,42 +70,43 @@ function parse(input: string): Array<Operation> | null {
 
 // EVALUATOR
 
-function evaluateAdd(stack: Readonly<Array<number>>): Readonly<Array<number>> {
-  const augend = stack[1] ?? 0;
-  const addend = stack[0] ?? 0;
+function evaluateAdd(arr: Readonly<Array<number>>): Readonly<Array<number>> {
+  const stack = Stack(arr);
+  const [addend = 0, augend = 0] = stack.take(2);
 
-  return [augend + addend, ...stack.slice(2)];
+  return stack.skip(2).push(augend + addend).toArray();
 }
 
-function evaluateSubtract(stack: Readonly<Array<number>>): Readonly<Array<number>> {
-  const minuend = stack[1] ?? 0;
-  const subtrahend = stack[0] ?? 0;
+function evaluateSubtract(arr: Readonly<Array<number>>): Readonly<Array<number>> {
+  const stack = Stack(arr);
+  const [subtrahend = 0, minuend = 0] = stack.take(2);
 
-  return [minuend - subtrahend, ...stack.slice(2)];
+  return stack.skip(2).push(minuend - subtrahend).toArray();
 }
 
-function evaluateMultiply(stack: Readonly<Array<number>>): Readonly<Array<number>> {
-  const multiplier = stack[1] ?? 0;
-  const multiplicand = stack[0] ?? 0;
+function evaluateMultiply(arr: Readonly<Array<number>>): Readonly<Array<number>> {
+  const stack = Stack(arr);
+  const [multiplicand = 0, multiplier = 0] = stack.take(2);
 
-  return [multiplier * multiplicand, ...stack.slice(2)];
+  return stack.skip(2).push(multiplier * multiplicand).toArray();
 }
 
-function evaluateDivide(stack: Readonly<Array<number>>): Readonly<Array<number>> {
-  const dividend = stack[1] ?? 0;
-  const divisor = stack[0] ?? 0;
+function evaluateDivide(arr: Readonly<Array<number>>): Readonly<Array<number>> {
+  const stack = Stack(arr);
+  const [divisor = 0, dividend = 0] = stack.take(2);
 
   // We could throw an error on division by zero, but just using zero is fine.
   if (divisor === 0) {
-    return [0, ...stack.slice(2)];
+    return stack.skip(2).push(0).toArray();
   }
   else {
-    return [dividend / divisor, ...stack.slice(2)];
+    return stack.skip(2).push(dividend / divisor).toArray();
   }
 }
 
-function evaluatePush(n: number, stack: Readonly<Array<number>>): Readonly<Array<number>> {
-  return [n, ...stack];
+function evaluatePush(n: number, arr: Readonly<Array<number>>): Readonly<Array<number>> {
+  const stack = Stack(arr);
+  return stack.push(n).toArray();
 }
 
 function evaluate(

@@ -13,5 +13,8 @@
   },
   "scripts": {
     "test": "jest"
+  },
+  "dependencies": {
+    "immutable": "^4.1.0"
   }
 }
