@@ -1,9 +1,5 @@
 import Op, { type Operation } from './operation';
 
-// TYPE ALIASES
-
-type Stack = Readonly<Array<number>>;
-
 // CONSTANTS
 
 /*
@@ -73,28 +69,28 @@ function parse(input: string): Array<Operation> | null {
 
 // EVALUATOR
 
-function evaluateAdd(stack: Stack): Stack {
+function evaluateAdd(stack: Readonly<Array<number>>): Readonly<Array<number>> {
   const augend = stack[1] ?? 0;
   const addend = stack[0] ?? 0;
 
   return [augend + addend, ...stack.slice(2)];
 }
 
-function evaluateSubtract(stack: Stack): Stack {
+function evaluateSubtract(stack: Readonly<Array<number>>): Readonly<Array<number>> {
   const minuend = stack[1] ?? 0;
   const subtrahend = stack[0] ?? 0;
 
   return [minuend - subtrahend, ...stack.slice(2)];
 }
 
-function evaluateMultiply(stack: Stack): Stack {
+function evaluateMultiply(stack: Readonly<Array<number>>): Readonly<Array<number>> {
   const multiplier = stack[1] ?? 0;
   const multiplicand = stack[0] ?? 0;
 
   return [multiplier * multiplicand, ...stack.slice(2)];
 }
 
-function evaluateDivide(stack: Stack): Stack {
+function evaluateDivide(stack: Readonly<Array<number>>): Readonly<Array<number>> {
   const dividend = stack[1] ?? 0;
   const divisor = stack[0] ?? 0;
 
@@ -107,11 +103,14 @@ function evaluateDivide(stack: Stack): Stack {
   }
 }
 
-function evaluatePush(n: number, stack: Stack): Stack {
+function evaluatePush(n: number, stack: Readonly<Array<number>>): Readonly<Array<number>> {
   return [n, ...stack];
 }
 
-function evaluate(operations: Readonly<Array<Operation>>, stack: Stack): Stack {
+function evaluate(
+  operations: Readonly<Array<Operation>>,
+  stack: Readonly<Array<number>>,
+): Readonly<Array<number>> {
   return operations.reduce((newStack, op) => {
     switch (op.kind) {
       case 'Op/Add':
