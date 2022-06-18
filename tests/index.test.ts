@@ -95,15 +95,16 @@ describe('Reverse Polish Notation library', () => {
   describe('Evaluator', () => {
     test('No operations on the initial model produces no changes', () => {
       // TODO: Stacks are converted, so they aren't the same reference yet
-      expect(Internal.evaluate([], API.initialModel)).toEqual(API.initialModel);
+      const stack = Stack(API.initialModel);
+      expect(Internal.evaluate([], stack)).toBe(stack);
     });
 
     Fuzz.test(
       'No operations on arbitrary stacks produces no changes',
       stackFuzzer,
-      (stack: Array<number>) => {
-        // TODO: Stacks are converted, so they aren't the same reference yet
-        expect(Internal.evaluate([], stack)).toEqual(stack);
+      (arr: Array<number>) => {
+        const stack = Stack(arr);
+        expect(Internal.evaluate([], stack)).toBe(stack);
       },
     );
 

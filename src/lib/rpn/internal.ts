@@ -106,8 +106,8 @@ function evaluatePush(n: number, stack: Stack<number>): Stack<number> {
 
 function evaluate(
   operations: Readonly<Array<Operation>>,
-  stack: Readonly<Array<number>>,
-): Readonly<Array<number>> {
+  stack: Stack<number>,
+): Stack<number> {
   return operations.reduce((newStack, op) => {
     switch (op.kind) {
       case 'Op/Add':
@@ -129,7 +129,7 @@ function evaluate(
       default:
         return newStack;
     }
-  }, Stack(stack)).toArray();
+  }, Stack(stack));
 }
 
 // EXPORTS

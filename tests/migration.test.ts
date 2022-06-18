@@ -223,18 +223,20 @@ describe('Migrations', () => {
       Fuzz.test(
         'matches original implementation',
         evaluatorFuzzer(),
-        ({ operations, stack }: EvaluatorInput) => {
-          expect(Internal.evaluate(operations, stack))
-            .toEqual(referenceEvaluate(operations, stack));
+        ({ operations, stack: arr }: EvaluatorInput) => {
+          const stack = Stack(arr);
+          expect(Internal.evaluate(operations, stack).toArray())
+            .toEqual(referenceEvaluate(operations, stack.toArray()));
         },
       );
 
       Fuzz.test(
         'matches original implementation when given no operations',
         stackFuzzer,
-        (stack: Array<number>) => {
-          expect(Internal.evaluate([], stack))
-            .toEqual(referenceEvaluate([], stack));
+        (arr: Array<number>) => {
+          const stack = Stack(arr);
+          expect(Internal.evaluate([], stack).toArray())
+            .toEqual(referenceEvaluate([], stack.toArray())); 
         },
       );
     });

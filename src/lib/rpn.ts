@@ -1,3 +1,4 @@
+import { Stack } from 'immutable';
 import Internal from './rpn/internal';
 
 // MODEL
@@ -13,7 +14,7 @@ function update(input: string, stack: Readonly<Array<number>>): Readonly<Array<n
     return stack;
   }
   else {
-    return Object.freeze(Internal.evaluate(maybeOperations, stack));
+    return Object.freeze(Internal.evaluate(maybeOperations, Stack(stack)).toArray());
   }
 }
 
