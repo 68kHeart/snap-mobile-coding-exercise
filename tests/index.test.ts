@@ -200,34 +200,26 @@ describe('Reverse Polish Notation library', () => {
         API.initialModel,
 
         // > 5
-        [5, ...API.initialModel],
+        API.initialModel.push(5),
 
         // > 8
-        [8, 5, ...API.initialModel],
+        API.initialModel.push(8, 5),
 
         // > +
-        [5 + 8, ...API.initialModel],
+        API.initialModel.push(5 + 8),
       ];
 
-      let migrationSteps = steps.map(Stack);
-
-      describe('Migration steps', () => {
-        test('are equivalent to original steps', () => {
-          expect(migrationSteps.map((s) => s.toArray())).toEqual(steps);
-        });
-      });
-
       test('Via evaluations', () => {
-        let stack = migrationSteps[0];
+        let stack = steps[0];
 
         stack = Internal.evaluatePush(5, stack);
-        expect(stack).toEqual(migrationSteps[1]);
+        expect(stack).toEqual(steps[1]);
 
         stack = Internal.evaluatePush(8, stack);
-        expect(stack).toEqual(migrationSteps[2]);
+        expect(stack).toEqual(steps[2]);
 
         stack = Internal.evaluateAdd(stack);
-        expect(stack).toEqual(migrationSteps[3]);
+        expect(stack).toEqual(steps[3]);
       });
 
       test('Via parsing', () => {
@@ -249,22 +241,14 @@ describe('Reverse Polish Notation library', () => {
         API.initialModel,
 
         // > 5 5 5 8 + + -
-        [(5 - (5 + (5 + 8))), ...API.initialModel],
+        API.initialModel.push(5 - (5 + (5 + 8))),
 
         // > 13 +
-        [((5 - (5 + (5 + 8))) + 13), ...API.initialModel],
+        API.initialModel.push((5 - (5 + (5 + 8))) + 13),
       ];
 
-      let migrationSteps = steps.map(Stack);
-
-      describe('Migration steps', () => {
-        test('are equivalent to original steps', () => {
-          expect(migrationSteps.map((s) => s.toArray())).toEqual(steps);
-        });
-      });
-
       test('Via evaluations', () => {
-        let stack = migrationSteps[0];
+        let stack = steps[0];
 
         stack = Internal.evaluatePush(5, stack);
         stack = Internal.evaluatePush(5, stack);
@@ -273,11 +257,11 @@ describe('Reverse Polish Notation library', () => {
         stack = Internal.evaluateAdd(stack);
         stack = Internal.evaluateAdd(stack);
         stack = Internal.evaluateSubtract(stack);
-        expect(stack).toEqual(migrationSteps[1]);
+        expect(stack).toEqual(steps[1]);
 
         stack = Internal.evaluatePush(13, stack);
         stack = Internal.evaluateAdd(stack);
-        expect(stack).toEqual(migrationSteps[2]);
+        expect(stack).toEqual(steps[2]);
       });
 
       test('Via parsing', () => {
@@ -296,46 +280,38 @@ describe('Reverse Polish Notation library', () => {
         API.initialModel,
 
         // > -3
-        [-3.0, ...API.initialModel],
+        API.initialModel.push(-3.0),
 
         // > -2
-        [-2.0, -3.0, ...API.initialModel],
+        API.initialModel.push(-2.0, -3.0),
 
         // > *
-        [(-3.0 * -2.0), ...API.initialModel],
+        API.initialModel.push(-3.0 * -2.0),
 
         // > 5
-        [5.0, (-3.0 * -2.0), ...API.initialModel],
+        API.initialModel.push(5.0, -3.0 * -2.0),
 
         // > +
-        [((-3.0 * -2.0) + 5.0), ...API.initialModel],
+        API.initialModel.push((-3.0 * -2.0) + 5.0),
       ];
 
-      let migrationSteps = steps.map(Stack);
-
-      describe('Migration steps', () => {
-        test('are equivalent to original steps', () => {
-          expect(migrationSteps.map((s) => s.toArray())).toEqual(steps);
-        });
-      });
-
       test('Via evaluations', () => {
-        let stack = migrationSteps[0];
+        let stack = steps[0];
 
         stack = Internal.evaluatePush(-3, stack);
-        expect(stack).toEqual(migrationSteps[1]);
+        expect(stack).toEqual(steps[1]);
 
         stack = Internal.evaluatePush(-2, stack);
-        expect(stack).toEqual(migrationSteps[2]);
+        expect(stack).toEqual(steps[2]);
 
         stack = Internal.evaluateMultiply(stack);
-        expect(stack).toEqual(migrationSteps[3]);
+        expect(stack).toEqual(steps[3]);
 
         stack = Internal.evaluatePush(5, stack);
-        expect(stack).toEqual(migrationSteps[4]);
+        expect(stack).toEqual(steps[4]);
 
         stack = Internal.evaluateAdd(stack);
-        expect(stack).toEqual(migrationSteps[5]);
+        expect(stack).toEqual(steps[5]);
       });
 
       test('Via parsing', () => {
@@ -363,46 +339,38 @@ describe('Reverse Polish Notation library', () => {
         API.initialModel,
 
         // > 5
-        [5, ...API.initialModel],
+        API.initialModel.push(5),
 
         // > 9
-        [9, 5, ...API.initialModel],
+        API.initialModel.push(9, 5),
 
         // > 1
-        [1, 9, 5, ...API.initialModel],
+        API.initialModel.push(1, 9, 5),
 
         // > -
-        [(9 - 1), 5, ...API.initialModel],
+        API.initialModel.push(9 - 1, 5),
 
         // > /
-        [(5 / (9 - 1)), ...API.initialModel],
+        API.initialModel.push(5 / (9 - 1)),
       ];
 
-      let migrationSteps = steps.map(Stack);
-
-      describe('Migration steps', () => {
-        test('are equivalent to original steps', () => {
-          expect(migrationSteps.map((s) => s.toArray())).toEqual(steps);
-        });
-      });
-
       test('Via evaluations', () => {
-        let stack = migrationSteps[0];
+        let stack = steps[0];
 
         stack = Internal.evaluatePush(5, stack);
-        expect(stack).toEqual(migrationSteps[1]);
+        expect(stack).toEqual(steps[1]);
 
         stack = Internal.evaluatePush(9, stack);
-        expect(stack).toEqual(migrationSteps[2]);
+        expect(stack).toEqual(steps[2]);
 
         stack = Internal.evaluatePush(1, stack);
-        expect(stack).toEqual(migrationSteps[3]);
+        expect(stack).toEqual(steps[3]);
 
         stack = Internal.evaluateSubtract(stack);
-        expect(stack).toEqual(migrationSteps[4]);
+        expect(stack).toEqual(steps[4]);
 
         stack = Internal.evaluateDivide(stack);
-        expect(stack).toEqual(migrationSteps[5]);
+        expect(stack).toEqual(steps[5]);
       });
 
       test('Via parsing', () => {
