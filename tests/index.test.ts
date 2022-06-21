@@ -14,52 +14,60 @@ describe('Reverse Polish Notation library', () => {
   describe('Parser', () => {
     // OPERATORS
 
-    test('"+" parses as addition', () => {
-      expect(Internal.parse('+')).toEqual(Stack.of(Op.Add));
+    test('reads "+" addition', () => {
+      expect(Internal.parse('+'))
+        .toEqual(Stack.of(Op.Add));
     });
 
-    test('"-" parses as subtraction', () => {
-      expect(Internal.parse('-')).toEqual(Stack.of(Op.Subtract));
+    test('reads "-" as subtraction', () => {
+      expect(Internal.parse('-'))
+        .toEqual(Stack.of(Op.Subtract));
     });
 
-    test('"*" parses as multiplication', () => {
-      expect(Internal.parse('*')).toEqual(Stack.of(Op.Multiply));
+    test('reads "*" as multiplication', () => {
+      expect(Internal.parse('*'))
+        .toEqual(Stack.of(Op.Multiply));
     });
 
-    test('"/" parses as division', () => {
-      expect(Internal.parse('/')).toEqual(Stack.of(Op.Divide));
+    test('reads "/" as division', () => {
+      expect(Internal.parse('/'))
+        .toEqual(Stack.of(Op.Divide));
     });
 
     // NUMBERS
 
     test('NaN is not a parsable number', () => {
-      expect(Internal.parse('NaN')).toBeNull();
+      expect(Internal.parse('NaN'))
+        .toBeNull();
     });
 
     test('Positive infinity is not a parsable number', () => {
-      expect(Internal.parse('Infinity')).toBeNull();
+      expect(Internal.parse('Infinity'))
+        .toBeNull();
     });
 
     test('Negative infinity is not a parsable number', () => {
-      expect(Internal.parse('-Infinity')).toBeNull();
+      expect(Internal.parse('-Infinity'))
+        .toBeNull();
     });
 
-    fuzz(Fuzzer.float, 'reads random numbers correctly', (n: number) => {
+    fuzz(Fuzzer.float, 'reads random numbers as stack pushes', (n: number) => {
       expect(Internal.parse(n.toString()))
         .toEqual(Stack.of(Op.Push(n)));
     });
   });
 
   describe('Evaluator', () => {
-    test('No operations on the initial model produces no changes', () => {
-      // TODO: Stacks are converted, so they aren't the same reference yet
-      const stack = Stack(API.initialModel);
-      expect(Internal.evaluate(Stack(), stack)).toBe(stack);
+    test('does not change the initial model when given no operations', () => {
+      const stack = API.initialModel;
+
+      expect(Internal.evaluate(Stack(), API.initialModel))
+        .toBe(API.initialModel);
     });
 
     fuzz(
       stackFuzzer,
-      'returns same random stack if no operations are performed',
+      'does not change a random stack when given no operations',
       (stack) => {
         expect(Internal.evaluate(Stack(), stack))
           .toBe(stack);
@@ -92,7 +100,8 @@ describe('Reverse Polish Notation library', () => {
         actualStack = Internal.evaluatePush(addend, actualStack);
         actualStack = Internal.evaluateAdd(actualStack);
 
-        expect(actualStack).toEqual(expectedStack);
+        expect(actualStack)
+          .toEqual(expectedStack);
       },
     );
 
@@ -112,7 +121,8 @@ describe('Reverse Polish Notation library', () => {
         actualStack = Internal.evaluatePush(subtrahend, actualStack);
         actualStack = Internal.evaluateSubtract(actualStack);
 
-        expect(actualStack).toEqual(expectedStack);
+        expect(actualStack)
+          .toEqual(expectedStack);
       },
     );
 
@@ -132,7 +142,8 @@ describe('Reverse Polish Notation library', () => {
         actualStack = Internal.evaluatePush(multiplicand, actualStack);
         actualStack = Internal.evaluateMultiply(actualStack);
 
-        expect(actualStack).toEqual(expectedStack);
+        expect(actualStack)
+          .toEqual(expectedStack);
       },
     );
 
@@ -154,7 +165,8 @@ describe('Reverse Polish Notation library', () => {
         actualStack = Internal.evaluatePush(divisor, actualStack);
         actualStack = Internal.evaluateDivide(actualStack);
 
-        expect(actualStack).toEqual(expectedStack);
+        expect(actualStack)
+          .toEqual(expectedStack);
       },
     );
   });
