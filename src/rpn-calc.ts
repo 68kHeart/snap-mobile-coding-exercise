@@ -15,6 +15,35 @@ const repl = Readline.createInterface({
   prompt: '> ',
 });
 
+// Transform possibly messy numbers into nice strings for the REPL
+
+const DECIMAL_PLACES = 2;
+const DECIMAL_SHIFT_FACTOR = 10 ** DECIMAL_PLACES;
+
+function toPrettyPrintNumber(n: number): string {
+  const shiftedN = n * DECIMAL_SHIFT_FACTOR;
+  const remainder = shiftedN % 1;
+
+  if (remainder === 0) {
+    return n.toString();
+  }
+  else {
+    const digits = Math.round(shiftedN).toString();
+    const whole = digits.slice(0, -DECIMAL_PLACES);
+    const fraction = digits.slice(-DECIMAL_PLACES).replace(/0+$/, '');
+
+    const printedWhole = whole !== ''
+      ? whole
+      : '0';
+
+    const printedFraction = fraction !== ''
+      ? `.${fraction}`
+      : '';
+
+    return `${printedWhole}${printedFraction}`;
+  }
+}
+
 // Process input as we get it, line by line
 
 repl.on('line', (commands: string) => {
@@ -29,7 +58,7 @@ repl.on('line', (commands: string) => {
   }
   else {
     stack = newStack;
-    console.log(stack.first());
+    console.log(toPrettyPrintNumber(stack.first() ?? 0));
   }
 
   repl.prompt();
