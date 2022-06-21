@@ -54,18 +54,22 @@ function parseSymbol(input: string): Operation | null {
   }
 }
 
-function parse(input: string): Array<Operation> | null {
-  const operations = input.split(' ')
-    .filter((s) => s !== '')
-    .map(parseSymbol);
+function parse(input: string): Stack<Operation> | null {
+  const symbols = input.split(' ').filter((s) => s !== '');
+  const maybeRevOps = symbols.reduce((ops, symbol) => {
+    // You could do an `ops` null check first to avoid unnecessary calculations,
+    // but comparing strings isn't intensive. Don't prematurely optimize things.
+    const maybeOp = parseSymbol(symbol);
 
-  if (operations.includes(null)) {
-    return null;
-  }
-  else {
-    // We have to unsafely assert the type of `result`. :(
-    return operations as Array<Operation>;
-  }
+    if (ops === null || maybeOp === null) {
+      return null;
+    }
+    else {
+      return ops.push(maybeOp);
+    }
+  }, Stack() as Stack<Operation> | null);
+
+  return maybeRevOps?.reverse() ?? null;
 }
 
 // EVALUATOR
@@ -105,7 +109,7 @@ function evaluatePush(n: number, stack: Stack<number>): Stack<number> {
 }
 
 function evaluate(
-  operations: Readonly<Array<Operation>>,
+  operations: Stack<Operation>,
   stack: Stack<number>,
 ): Stack<number> {
   return operations.reduce((newStack, op) => {

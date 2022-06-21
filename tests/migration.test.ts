@@ -1,6 +1,7 @@
 import { Stack } from 'immutable';
 import Op, { type Operation } from '../src/lib/rpn/operation';
 import Internal from '../src/lib/rpn/internal';
+import { Fuzzer, fuzz } from './jest-fuzzer';
 
 const Fuzz = require('jest-fuzz');
 
@@ -73,6 +74,27 @@ const evaluatorFuzzer = Fuzz.Fuzzer({
   stack: stackFuzzer,
 });
 
+// PARSER FUZZERS
+
+const symbolFuzzer = Fuzzer.intRange(1, 5).map((kind) => {
+  switch (kind) {
+    case 1: return '+';
+    case 2: return '-';
+    case 3: return '*';
+    case 4: return '/';
+    case 5: return Fuzzer.float.generate().toString();
+    default: throw('Impossible state');
+  }
+});
+
+const parsableStringFuzzer = Fuzzer.map2(
+  Fuzzer.array(symbolFuzzer),
+  Fuzzer.intRange(1, 20).map((n) => ' '.repeat(n)),
+  (array, padding) => array
+    .map((symbol) => padding + symbol + padding)
+    .join(''),
+);
+
 // REFERENCE IMPLEMENTATIONS
 
 function referenceEvaluateAdd(stack: Readonly<Array<number>>): Readonly<Array<number>> {
@@ -139,6 +161,54 @@ function referenceEvaluate(
         return newStack;
     }
   }, stack);
+}
+
+// PARSER
+
+function referenceParseSymbol(input: string): Operation | null {
+  switch (input) {
+    case '+':
+      return Op.Add;
+
+    case '-':
+      return Op.Subtract;
+
+    case '*':
+      return Op.Multiply;
+
+    case '/':
+      return Op.Divide;
+
+    default:
+      // inlined `validNumberRegex`
+      if (/^-?(\d+|\d*\.\d+)$/.test(input)) {
+        return Op.Push(parseFloat(input));
+      }
+      else {
+        return null;
+      }
+  }
+}
+
+function referenceParse(input: string): Array<Operation> | null {
+  const operations = input.split(' ')
+    .filter((s) => s !== '')
+    .map(referenceParseSymbol);
+
+  if (operations.includes(null)) {
+    return null;
+  }
+  else {
+    // We have to unsafely assert the type of `result`. :(
+    return operations as Array<Operation>;
+  }
+}
+
+// HELPERS
+
+// Transform Stacks into arrays for testing against reference versions.
+function migrated<A>(value: Stack<A> | null): Array<A> | null {
+  return value?.toArray() ?? null;
 }
 
 // TESTS
@@ -225,7 +295,9 @@ describe('Migrations', () => {
         evaluatorFuzzer(),
         ({ operations, stack: arr }: EvaluatorInput) => {
           const stack = Stack(arr);
-          expect(Internal.evaluate(operations, stack).toArray())
+          const ops = Stack(operations);
+
+          expect(migrated(Internal.evaluate(ops, stack)))
             .toEqual(referenceEvaluate(operations, stack.toArray()));
         },
       );
@@ -235,10 +307,35 @@ describe('Migrations', () => {
         stackFuzzer,
         (arr: Array<number>) => {
           const stack = Stack(arr);
-          expect(Internal.evaluate([], stack).toArray())
+          expect(Internal.evaluate(Stack(), stack).toArray())
             .toEqual(referenceEvaluate([], stack.toArray())); 
         },
       );
     });
   });
+
+  describe('Parser', () => {
+    test('matches original implementation when given empty input', () => {
+      expect(migrated(Internal.parse('')))
+        .toEqual(referenceParse(''));
+    });
+
+    fuzz(
+      parsableStringFuzzer,
+      'matches original implementation with parsable strings',
+      (symbols: string) => {
+        expect(migrated(Internal.parse(symbols)))
+          .toEqual(referenceParse(symbols));
+      },
+    );
+
+    fuzz(
+      Fuzzer.string,
+      'matches original implementation with random strings',
+      (s) => {
+        expect(migrated(Internal.parse(s)))
+          .toEqual(referenceParse(s));
+      },
+    );
+  })
 });
