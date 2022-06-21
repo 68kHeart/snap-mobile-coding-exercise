@@ -1,18 +1,12 @@
-const Fuzz = require('jest-fuzz');
-
 import { Stack } from 'immutable';
 import API from '../src/lib/rpn';
 import Op from '../src/lib/rpn/operation';
 import Internal from '../src/lib/rpn/internal';
+import { Fuzzer, fuzz, fuzz2, fuzz3 } from './jest-fuzzer';
 
 // FUZZERS
 
-const stackFuzzer = Fuzz.array({
-  type: Fuzz.float({
-    min: Number.MIN_SAFE_INTEGER,
-    max: Number.MAX_SAFE_INTEGER,
-  }),
-});
+const stackFuzzer = Fuzzer.array(Fuzzer.float).map(Stack);
 
 // TESTS
 
@@ -50,20 +44,10 @@ describe('Reverse Polish Notation library', () => {
       expect(Internal.parse('-Infinity')).toBeNull();
     });
 
-    Fuzz.test(
-      'Number parses correctly',
-      Fuzz.float,
-      (n: number) => {
-        const stringyN = n.toString();
-
-        if (Number.isFinite(n)) {
-          expect(Internal.parse(stringyN)).toBe(n);
-        }
-        else {
-          expect(Internal.parse(stringyN)).toBeNull();
-        }
-      },
-    );
+    fuzz(Fuzzer.float, 'reads random numbers correctly', (n: number) => {
+      expect(Internal.parse(n.toString()))
+        .toEqual(Stack.of(Op.Push(n)));
+    });
   });
 
   describe('Evaluator', () => {
@@ -73,97 +57,104 @@ describe('Reverse Polish Notation library', () => {
       expect(Internal.evaluate(Stack(), stack)).toBe(stack);
     });
 
-    Fuzz.test(
-      'No operations on arbitrary stacks produces no changes',
+    fuzz(
       stackFuzzer,
-      (arr: Array<number>) => {
-        const stack = Stack(arr);
-        expect(Internal.evaluate(Stack(), stack)).toBe(stack);
+      'returns same random stack if no operations are performed',
+      (stack) => {
+        expect(Internal.evaluate(Stack(), stack))
+          .toBe(stack);
       },
     );
 
-    Fuzz.test(
-      'Push operation pushes a number on the stack',
-      Fuzz.float(),
-      (n: number) => {
-        expect(Internal.evaluatePush(n, Stack(API.initialModel)).toArray())
-          .toEqual([n, ...API.initialModel]);
+    fuzz2(
+      stackFuzzer,
+      Fuzzer.float,
+      'pushes a number on the stack when a Push is received',
+      (stack, n) => {
+        expect(Internal.evaluatePush(n, stack).toArray())
+          .toEqual([n, ...stack]);
       },
     );
 
-    Fuzz.test(
-      'Add operation pushes the sum of the top two numbers from the stack',
-      Fuzz.float,
-      (floatGenerator: () => number) => {
-        const augend = floatGenerator();
-        const addend = floatGenerator();
+    fuzz3(
+      stackFuzzer,
+      Fuzzer.float,
+      Fuzzer.float,
+      'replaces the top two numbers with their sum on an Add operation',
+      (stack, augend, addend) => {
         const sum = augend + addend;
 
-        let stack = Stack(API.initialModel);
-        stack = Internal.evaluatePush(augend, stack);
-        stack = Internal.evaluatePush(addend, stack);
+        let expectedStack = stack;
+        expectedStack = Internal.evaluatePush(sum, expectedStack);
 
-        let newStack = Stack(API.initialModel);
-        newStack = Internal.evaluatePush(sum, newStack);
+        let actualStack = stack;
+        actualStack = Internal.evaluatePush(augend, actualStack);
+        actualStack = Internal.evaluatePush(addend, actualStack);
+        actualStack = Internal.evaluateAdd(actualStack);
 
-        expect(Internal.evaluateAdd(stack)).toEqual(newStack);
+        expect(actualStack).toEqual(expectedStack);
       },
     );
 
-    Fuzz.test(
-      'Subtract operation pushes the difference of the top two numbers from the stack',
-      Fuzz.float,
-      (floatGenerator: () => number) => {
-        const minuend = floatGenerator();
-        const subtrahend = floatGenerator();
+    fuzz3(
+      stackFuzzer,
+      Fuzzer.float,
+      Fuzzer.float,
+      'replaces the top two numbers with their difference on a Subtract operation',
+      (stack, minuend, subtrahend) => {
         const difference = minuend - subtrahend;
 
-        let stack = Stack(API.initialModel);
-        stack = Internal.evaluatePush(minuend, stack);
-        stack = Internal.evaluatePush(subtrahend, stack);
+        let expectedStack = stack;
+        expectedStack = Internal.evaluatePush(difference, expectedStack);
 
-        let newStack = Stack(API.initialModel);
-        newStack = Internal.evaluatePush(difference, newStack);
+        let actualStack = stack;
+        actualStack = Internal.evaluatePush(minuend, actualStack);
+        actualStack = Internal.evaluatePush(subtrahend, actualStack);
+        actualStack = Internal.evaluateSubtract(actualStack);
 
-        expect(Internal.evaluateSubtract(stack)).toEqual(newStack);
+        expect(actualStack).toEqual(expectedStack);
       },
     );
 
-    Fuzz.test(
-      'Multiply operation pushes the product of the top two numbers from the stack',
-      Fuzz.float,
-      (floatGenerator: () => number) => {
-        const multiplier = floatGenerator();
-        const multiplicand = floatGenerator();
+    fuzz3(
+      stackFuzzer,
+      Fuzzer.float,
+      Fuzzer.float,
+      'replaces the top two numbers with their product on a Multiply operation',
+      (stack, multiplier, multiplicand) => {
         const product = multiplier * multiplicand;
 
-        let stack = Stack(API.initialModel);
-        stack = Internal.evaluatePush(multiplier, stack);
-        stack = Internal.evaluatePush(multiplicand, stack);
+        let expectedStack = stack;
+        expectedStack = Internal.evaluatePush(product, expectedStack);
 
-        let newStack = Stack(API.initialModel);
-        newStack = Internal.evaluatePush(product, newStack);
+        let actualStack = stack;
+        actualStack = Internal.evaluatePush(multiplier, actualStack);
+        actualStack = Internal.evaluatePush(multiplicand, actualStack);
+        actualStack = Internal.evaluateMultiply(actualStack);
 
-        expect(Internal.evaluateMultiply(stack)).toEqual(newStack);
+        expect(actualStack).toEqual(expectedStack);
       },
     );
 
-    Fuzz.test(
-      'Divide operation pushes the quotient of the top two numbers from the stack',
-      Fuzz.float,
-      (floatGenerator: () => number) => {
-        const dividend = floatGenerator();
-        const divisor = floatGenerator();
-        const quotient = dividend / divisor;
+    fuzz3(
+      stackFuzzer,
+      Fuzzer.float,
+      Fuzzer.float,
+      'replaces the top two numbers with their quotient on a Divide operation',
+      (stack, dividend, divisor) => {
+        const quotient = divisor === 0
+          ? 0
+          : dividend / divisor;
 
-        let stack = Stack(API.initialModel);
-        stack = Internal.evaluatePush(dividend, stack);
-        stack = Internal.evaluatePush(divisor, stack);
+        let expectedStack = stack;
+        expectedStack = Internal.evaluatePush(quotient, expectedStack);
 
-        let newStack = Stack(API.initialModel);
-        newStack = Internal.evaluatePush(quotient, newStack);
+        let actualStack = stack;
+        actualStack = Internal.evaluatePush(dividend, actualStack);
+        actualStack = Internal.evaluatePush(divisor, actualStack);
+        actualStack = Internal.evaluateDivide(actualStack);
 
-        expect(Internal.evaluateDivide(stack)).toEqual(newStack);
+        expect(actualStack).toEqual(expectedStack);
       },
     );
   });
