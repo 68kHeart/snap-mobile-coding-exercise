@@ -37,7 +37,7 @@ repl.on('line', (commands: string) => {
     const remainingFraction = shiftedResult % 1;
 
     if (remainingFraction !== 0) {
-      const stringyShiftedResult = (shiftedResult - remainingFraction).toString();
+      const stringyShiftedResult = Math.round(shiftedResult).toString();
       const wholePart = stringyShiftedResult.slice(0, -DECIMAL_PLACES);
       const fractionalPart = stringyShiftedResult.slice(wholePart.length);
       const stringyResult = `${wholePart === '' ? '0' : wholePart}.${fractionalPart}`;
