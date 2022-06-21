@@ -3,10 +3,6 @@
 import Readline from 'node:readline';
 import RPN from './lib/rpn';
 
-// Constants
-
-const DECIMAL_PLACES = 2;
-
 // Initialize data model
 
 let stack = RPN.initialModel;
@@ -18,6 +14,28 @@ const repl = Readline.createInterface({
   output: process.stdout,
   prompt: '> ',
 });
+
+// Transform possibly messy numbers into nice strings for the REPL
+
+const DECIMAL_PLACES = 2;
+const DECIMAL_SHIFT_FACTOR = 10 ** DECIMAL_PLACES;
+
+function toPrettyPrintNumber(n: number): string {
+  const shiftedResult = n * DECIMAL_SHIFT_FACTOR;
+  const remainingFraction = shiftedResult % 1;
+
+  if (remainingFraction !== 0) {
+    const stringyShiftedResult = Math.round(shiftedResult).toString();
+    const wholePart = stringyShiftedResult.slice(0, -DECIMAL_PLACES);
+    const fractionalPart = stringyShiftedResult.slice(-DECIMAL_PLACES).replace(/0+$/, '');
+    const stringyResult = `${wholePart === '' ? '0' : wholePart}.${fractionalPart}`;
+
+    return stringyResult;
+  }
+  else {
+    return n.toString();
+  }
+}
 
 // Process input as we get it, line by line
 
@@ -33,20 +51,7 @@ repl.on('line', (commands: string) => {
   }
   else {
     stack = newStack;
-    const shiftedResult = (stack.first() ?? 0) * (10 ** DECIMAL_PLACES);
-    const remainingFraction = shiftedResult % 1;
-
-    if (remainingFraction !== 0) {
-      const stringyShiftedResult = Math.round(shiftedResult).toString();
-      const wholePart = stringyShiftedResult.slice(0, -DECIMAL_PLACES);
-      const fractionalPart = stringyShiftedResult.slice(-DECIMAL_PLACES).replace(/0+$/, '');
-      const stringyResult = `${wholePart === '' ? '0' : wholePart}.${fractionalPart}`;
-
-      console.log(stringyResult);
-    }
-    else {
-      console.log(stack.first());
-    }
+    console.log(toPrettyPrintNumber(stack.first() ?? 0));
   }
 
   repl.prompt();
