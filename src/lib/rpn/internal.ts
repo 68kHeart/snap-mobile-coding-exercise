@@ -1,8 +1,5 @@
+import { Stack } from 'immutable';
 import Op, { type Operation } from './operation';
-
-// TYPE ALIASES
-
-type Stack = Readonly<Array<number>>;
 
 // CONSTANTS
 
@@ -57,61 +54,64 @@ function parseSymbol(input: string): Operation | null {
   }
 }
 
-function parse(input: string): Array<Operation> | null {
-  const operations = input.split(' ')
-    .filter((s) => s !== '')
-    .map(parseSymbol);
+function parse(input: string): Stack<Operation> | null {
+  const symbols = input.split(' ').filter((s) => s !== '');
+  const maybeRevOps = symbols.reduce((ops, symbol) => {
+    // You could do an `ops` null check first to avoid unnecessary calculations,
+    // but comparing strings isn't intensive. Don't prematurely optimize things.
+    const maybeOp = parseSymbol(symbol);
 
-  if (operations.includes(null)) {
-    return null;
-  }
-  else {
-    // We have to unsafely assert the type of `result`. :(
-    return operations as Array<Operation>;
-  }
+    if (ops === null || maybeOp === null) {
+      return null;
+    }
+    else {
+      return ops.push(maybeOp);
+    }
+  }, Stack() as Stack<Operation> | null);
+
+  return maybeRevOps?.reverse() ?? null;
 }
 
 // EVALUATOR
 
-function evaluateAdd(stack: Stack): Stack {
-  const augend = stack[1] ?? 0;
-  const addend = stack[0] ?? 0;
+function evaluateAdd(stack: Stack<number>): Stack<number> {
+  const [addend = 0, augend = 0] = stack.take(2);
 
-  return [augend + addend, ...stack.slice(2)];
+  return stack.skip(2).push(augend + addend);
 }
 
-function evaluateSubtract(stack: Stack): Stack {
-  const minuend = stack[1] ?? 0;
-  const subtrahend = stack[0] ?? 0;
+function evaluateSubtract(stack: Stack<number>): Stack<number> {
+  const [subtrahend = 0, minuend = 0] = stack.take(2);
 
-  return [minuend - subtrahend, ...stack.slice(2)];
+  return stack.skip(2).push(minuend - subtrahend);
 }
 
-function evaluateMultiply(stack: Stack): Stack {
-  const multiplier = stack[1] ?? 0;
-  const multiplicand = stack[0] ?? 0;
+function evaluateMultiply(stack: Stack<number>): Stack<number> {
+  const [multiplicand = 0, multiplier = 0] = stack.take(2);
 
-  return [multiplier * multiplicand, ...stack.slice(2)];
+  return stack.skip(2).push(multiplier * multiplicand);
 }
 
-function evaluateDivide(stack: Stack): Stack {
-  const dividend = stack[1] ?? 0;
-  const divisor = stack[0] ?? 0;
+function evaluateDivide(stack: Stack<number>): Stack<number> {
+  const [divisor = 0, dividend = 0] = stack.take(2);
 
   // We could throw an error on division by zero, but just using zero is fine.
   if (divisor === 0) {
-    return [0, ...stack.slice(2)];
+    return stack.skip(2).push(0);
   }
   else {
-    return [dividend / divisor, ...stack.slice(2)];
+    return stack.skip(2).push(dividend / divisor);
   }
 }
 
-function evaluatePush(n: number, stack: Stack): Stack {
-  return [n, ...stack];
+function evaluatePush(n: number, stack: Stack<number>): Stack<number> {
+  return stack.push(n);
 }
 
-function evaluate(operations: Readonly<Array<Operation>>, stack: Stack): Stack {
+function evaluate(
+  operations: Stack<Operation>,
+  stack: Stack<number>,
+): Stack<number> {
   return operations.reduce((newStack, op) => {
     switch (op.kind) {
       case 'Op/Add':
@@ -133,7 +133,7 @@ function evaluate(operations: Readonly<Array<Operation>>, stack: Stack): Stack {
       default:
         return newStack;
     }
-  }, stack);
+  }, Stack(stack));
 }
 
 // EXPORTS

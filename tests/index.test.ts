@@ -1,5 +1,6 @@
 const Fuzz = require('jest-fuzz');
 
+import { Stack } from 'immutable';
 import API from '../src/lib/rpn';
 import Op from '../src/lib/rpn/operation';
 import Internal from '../src/lib/rpn/internal';
@@ -20,19 +21,19 @@ describe('Reverse Polish Notation library', () => {
     // OPERATORS
 
     test('"+" parses as addition', () => {
-      expect(Internal.parse('+')).toEqual([Op.Add]);
+      expect(Internal.parse('+')).toEqual(Stack.of(Op.Add));
     });
 
     test('"-" parses as subtraction', () => {
-      expect(Internal.parse('-')).toEqual([Op.Subtract]);
+      expect(Internal.parse('-')).toEqual(Stack.of(Op.Subtract));
     });
 
     test('"*" parses as multiplication', () => {
-      expect(Internal.parse('*')).toEqual([Op.Multiply]);
+      expect(Internal.parse('*')).toEqual(Stack.of(Op.Multiply));
     });
 
     test('"/" parses as division', () => {
-      expect(Internal.parse('/')).toEqual([Op.Divide]);
+      expect(Internal.parse('/')).toEqual(Stack.of(Op.Divide));
     });
 
     // NUMBERS
@@ -51,27 +52,27 @@ describe('Reverse Polish Notation library', () => {
 
     describe('Inferred tests from coding exercise', () => {
       test('"-3" parses as the number -3.0', () => {
-        expect(Internal.parse('-3')).toEqual([Op.Push(-3.0)]);
+        expect(Internal.parse('-3')).toEqual(Stack.of(Op.Push(-3.0)));
       });
 
       test('"-2" parses as the number -2.0', () => {
-        expect(Internal.parse('-2')).toEqual([Op.Push(-2.0)]);
+        expect(Internal.parse('-2')).toEqual(Stack.of(Op.Push(-2.0)));
       });
 
       test('"1" parses as the number 1', () => {
-        expect(Internal.parse('1')).toEqual([Op.Push(1)]);
+        expect(Internal.parse('1')).toEqual(Stack.of(Op.Push(1)));
       });
 
       test('"5" parses as the number 5', () => {
-        expect(Internal.parse('5')).toEqual([Op.Push(5)]);
+        expect(Internal.parse('5')).toEqual(Stack.of(Op.Push(5)));
       });
 
       test('"8" parses as the number 8', () => {
-        expect(Internal.parse('8')).toEqual([Op.Push(8)]);
+        expect(Internal.parse('8')).toEqual(Stack.of(Op.Push(8)));
       });
 
       test('"9" parses as the number 9', () => {
-        expect(Internal.parse('9')).toEqual([Op.Push(9)]);
+        expect(Internal.parse('9')).toEqual(Stack.of(Op.Push(9)));
       });
     });
 
@@ -93,14 +94,17 @@ describe('Reverse Polish Notation library', () => {
 
   describe('Evaluator', () => {
     test('No operations on the initial model produces no changes', () => {
-      expect(Internal.evaluate([], API.initialModel)).toBe(API.initialModel);
+      // TODO: Stacks are converted, so they aren't the same reference yet
+      const stack = Stack(API.initialModel);
+      expect(Internal.evaluate(Stack(), stack)).toBe(stack);
     });
 
     Fuzz.test(
       'No operations on arbitrary stacks produces no changes',
       stackFuzzer,
-      (stack: Array<number>) => {
-        expect(Internal.evaluate([], stack)).toBe(stack);
+      (arr: Array<number>) => {
+        const stack = Stack(arr);
+        expect(Internal.evaluate(Stack(), stack)).toBe(stack);
       },
     );
 
@@ -108,7 +112,7 @@ describe('Reverse Polish Notation library', () => {
       'Push operation pushes a number on the stack',
       Fuzz.float(),
       (n: number) => {
-        expect(Internal.evaluatePush(n, API.initialModel))
+        expect(Internal.evaluatePush(n, Stack(API.initialModel)).toArray())
           .toEqual([n, ...API.initialModel]);
       },
     );
@@ -121,11 +125,11 @@ describe('Reverse Polish Notation library', () => {
         const addend = floatGenerator();
         const sum = augend + addend;
 
-        let stack = API.initialModel;
+        let stack = Stack(API.initialModel);
         stack = Internal.evaluatePush(augend, stack);
         stack = Internal.evaluatePush(addend, stack);
 
-        let newStack = API.initialModel;
+        let newStack = Stack(API.initialModel);
         newStack = Internal.evaluatePush(sum, newStack);
 
         expect(Internal.evaluateAdd(stack)).toEqual(newStack);
@@ -140,11 +144,11 @@ describe('Reverse Polish Notation library', () => {
         const subtrahend = floatGenerator();
         const difference = minuend - subtrahend;
 
-        let stack = API.initialModel;
+        let stack = Stack(API.initialModel);
         stack = Internal.evaluatePush(minuend, stack);
         stack = Internal.evaluatePush(subtrahend, stack);
 
-        let newStack = API.initialModel;
+        let newStack = Stack(API.initialModel);
         newStack = Internal.evaluatePush(difference, newStack);
 
         expect(Internal.evaluateSubtract(stack)).toEqual(newStack);
@@ -159,11 +163,11 @@ describe('Reverse Polish Notation library', () => {
         const multiplicand = floatGenerator();
         const product = multiplier * multiplicand;
 
-        let stack = API.initialModel;
+        let stack = Stack(API.initialModel);
         stack = Internal.evaluatePush(multiplier, stack);
         stack = Internal.evaluatePush(multiplicand, stack);
 
-        let newStack = API.initialModel;
+        let newStack = Stack(API.initialModel);
         newStack = Internal.evaluatePush(product, newStack);
 
         expect(Internal.evaluateMultiply(stack)).toEqual(newStack);
@@ -178,11 +182,11 @@ describe('Reverse Polish Notation library', () => {
         const divisor = floatGenerator();
         const quotient = dividend / divisor;
 
-        let stack = API.initialModel;
+        let stack = Stack(API.initialModel);
         stack = Internal.evaluatePush(dividend, stack);
         stack = Internal.evaluatePush(divisor, stack);
 
-        let newStack = API.initialModel;
+        let newStack = Stack(API.initialModel);
         newStack = Internal.evaluatePush(quotient, newStack);
 
         expect(Internal.evaluateDivide(stack)).toEqual(newStack);
@@ -196,13 +200,13 @@ describe('Reverse Polish Notation library', () => {
         API.initialModel,
 
         // > 5
-        [5, ...API.initialModel],
+        API.initialModel.push(5),
 
         // > 8
-        [8, 5, ...API.initialModel],
+        API.initialModel.push(8, 5),
 
         // > +
-        [5 + 8, ...API.initialModel],
+        API.initialModel.push(5 + 8),
       ];
 
       test('Via evaluations', () => {
@@ -237,10 +241,10 @@ describe('Reverse Polish Notation library', () => {
         API.initialModel,
 
         // > 5 5 5 8 + + -
-        [(5 - (5 + (5 + 8))), ...API.initialModel],
+        API.initialModel.push(5 - (5 + (5 + 8))),
 
         // > 13 +
-        [((5 - (5 + (5 + 8))) + 13), ...API.initialModel],
+        API.initialModel.push((5 - (5 + (5 + 8))) + 13),
       ];
 
       test('Via evaluations', () => {
@@ -276,19 +280,19 @@ describe('Reverse Polish Notation library', () => {
         API.initialModel,
 
         // > -3
-        [-3.0, ...API.initialModel],
+        API.initialModel.push(-3.0),
 
         // > -2
-        [-2.0, -3.0, ...API.initialModel],
+        API.initialModel.push(-2.0, -3.0),
 
         // > *
-        [(-3.0 * -2.0), ...API.initialModel],
+        API.initialModel.push(-3.0 * -2.0),
 
         // > 5
-        [5.0, (-3.0 * -2.0), ...API.initialModel],
+        API.initialModel.push(5.0, -3.0 * -2.0),
 
         // > +
-        [((-3.0 * -2.0) + 5.0), ...API.initialModel],
+        API.initialModel.push((-3.0 * -2.0) + 5.0),
       ];
 
       test('Via evaluations', () => {
@@ -335,19 +339,19 @@ describe('Reverse Polish Notation library', () => {
         API.initialModel,
 
         // > 5
-        [5, ...API.initialModel],
+        API.initialModel.push(5),
 
         // > 9
-        [9, 5, ...API.initialModel],
+        API.initialModel.push(9, 5),
 
         // > 1
-        [1, 9, 5, ...API.initialModel],
+        API.initialModel.push(1, 9, 5),
 
         // > -
-        [(9 - 1), 5, ...API.initialModel],
+        API.initialModel.push(9 - 1, 5),
 
         // > /
-        [(5 / (9 - 1)), ...API.initialModel],
+        API.initialModel.push(5 / (9 - 1)),
       ];
 
       test('Via evaluations', () => {

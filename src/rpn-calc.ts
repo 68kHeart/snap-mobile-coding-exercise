@@ -29,7 +29,7 @@ repl.on('line', (commands: string) => {
   }
   else {
     stack = newStack;
-    console.log(stack[0]);
+    console.log(stack.first());
   }
 
   repl.prompt();
