@@ -41,7 +41,7 @@ The library encompasses the underlying logic and processing, and the program is 
 
 In the library, the parser and the evaluator are designed as two separate pieces. The parser handles unknown input from the outside world and transforms it into a data type that represents valid operations. This data is then passed to the evaluator, which doesn't have to worry about the validity of what it received because all it receives is data that has been verified to be correct by the parser. This allows it to focus solely on evaluating the operations without becoming a mess of code, and the parser can just focus on turning text into operations. This separation of concerns allows for easier and more straightforward testing, in addition to helping quickly narrow scope during debugging.
 
-The stack used is [Node][], running compiled [TypeScript][]. Testing is done using [Jest][] and [jest-fuzz][].
+The stack used is [Node][], running compiled [TypeScript][]. Testing is done using [Jest][].
 
 ## Retrospective
 
@@ -81,8 +81,6 @@ You may not use or reproduce this code without explicit consent from the author.
 [Immutable.js]: https://immutable-js.com "Immutable.js homepage"
 
 [Jest]: https://jestjs.io "Jest homepage"
-
-[jest-fuzz]: https://github.com/jeffersonmourak/jest-fuzz "GitHub: jest-fuzz, by jeffersonmourak"
 
 [Node]: https://nodejs.org/ "Node.js homepage"
 
