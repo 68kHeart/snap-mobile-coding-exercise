@@ -1,80 +1,23 @@
 import { Stack } from 'immutable';
 import Op, { type Operation } from '../src/lib/rpn/operation';
 import Internal from '../src/lib/rpn/internal';
-import { Fuzzer, fuzz } from './jest-fuzzer';
-
-const Fuzz = require('jest-fuzz');
-
-// TYPES
-
-type StackArithmeticInput = {
-  stack: Array<number>,
-  lhs: number,
-  rhs: number,
-};
-
-type StackPushInput = {
-  stack: Array<number>,
-  value: number,
-};
-
-type EvaluatorInput = {
-  operations: Array<Operation>,
-  stack: Array<number>,
-};
+import { Fuzzer, fuzz, fuzz2, fuzz3 } from './jest-fuzzer';
 
 // FUZZERS
 
-// jest-fuzz's float fuzzer includes NaN and Infinity; we do not.
-const floatFuzzer = Fuzz.float({
-  min: Number.MIN_SAFE_INTEGER,
-  max: Number.MAX_SAFE_INTEGER,
-});
+const stackFuzzer = Fuzzer.array(Fuzzer.float).map(Stack);
 
-const operationFuzzer = Fuzz.Fuzzer(() => {
-  const kindFuzzer = Fuzz.int({ min: 1, max: 5 });
-  switch (kindFuzzer()) {
-    case 1:
-      return Op.Add;
-
-    case 2:
-      return Op.Subtract;
-
-    case 3:
-      return Op.Multiply;
-
-    case 4:
-      return Op.Divide;
-
-    case 5:
-      return Op.Push(floatFuzzer());
+const operationFuzzer = Fuzzer.intRange(1, 5).map((kind) => {
+  switch (kind) {
+    case 1: return Op.Add;
+    case 2: return Op.Subtract;
+    case 3: return Op.Multiply;
+    case 4: return Op.Divide;
+    // Op.Push can fail if the number is not finite, but we know it will be.
+    case 5: return Op.Push(Fuzzer.float.generate()) as Operation;
+    default: throw('Impossible state');
   }
-})
-
-const stackFuzzer = Fuzz.array({
-  type: floatFuzzer,
 });
-
-const stackArithmeticFuzzer = Fuzz.Fuzzer({
-  stack: stackFuzzer,
-  lhs: floatFuzzer,
-  rhs: floatFuzzer,
-});
-
-const stackPushFuzzer = Fuzz.Fuzzer({
-  stack: stackFuzzer,
-  value: floatFuzzer,
-});
-
-const evaluatorFuzzer = Fuzz.Fuzzer({
-  operations: Fuzz.array({
-    type: operationFuzzer,
-    minLength: 1,
-  }),
-  stack: stackFuzzer,
-});
-
-// PARSER FUZZERS
 
 const symbolFuzzer = Fuzzer.intRange(1, 5).map((kind) => {
   switch (kind) {
@@ -216,10 +159,12 @@ function migrated<A>(value: Stack<A> | null): Array<A> | null {
 describe('Migrations', () => {
   describe('Evaluator', () => {
     describe('evaluateAdd()', () => {
-      Fuzz.test(
+      fuzz3(
+        stackFuzzer,
+        Fuzzer.float,
+        Fuzzer.float,
         'matches original implementation',
-        stackArithmeticFuzzer(),
-        ({ stack, lhs: augend, rhs: addend }: StackArithmeticInput) => {
+        (stack, augend, addend) => {
           const input = Array.from(stack);
           input.unshift(augend);
           input.unshift(addend);
@@ -231,10 +176,12 @@ describe('Migrations', () => {
     });
 
     describe('evaluateSubtract()', () => {
-      Fuzz.test(
+      fuzz3(
+        stackFuzzer,
+        Fuzzer.float,
+        Fuzzer.float,
         'matches original implementation',
-        stackArithmeticFuzzer(),
-        ({ stack, lhs: minuend, rhs: subtrahend }: StackArithmeticInput) => {
+        (stack, minuend, subtrahend) => {
           const input = Array.from(stack);
           input.unshift(minuend);
           input.unshift(subtrahend);
@@ -246,10 +193,12 @@ describe('Migrations', () => {
     });
 
     describe('evaluateMultiply()', () => {
-      Fuzz.test(
+      fuzz3(
+        stackFuzzer,
+        Fuzzer.float,
+        Fuzzer.float,
         'matches original implementation',
-        stackArithmeticFuzzer(),
-        ({ stack, lhs: multiplier, rhs: multiplicand }: StackArithmeticInput) => {
+        (stack, multiplier, multiplicand) => {
           const input = Array.from(stack);
           input.unshift(multiplier);
           input.unshift(multiplicand);
@@ -261,10 +210,12 @@ describe('Migrations', () => {
     });
 
     describe('evaluateDivide()', () => {
-      Fuzz.test(
+      fuzz3(
+        stackFuzzer,
+        Fuzzer.float,
+        Fuzzer.float,
         'matches original implementation',
-        stackArithmeticFuzzer(),
-        ({ stack, lhs: dividend, rhs: divisor }: StackArithmeticInput) => {
+        (stack, dividend, divisor) => {
           const input = Array.from(stack);
           input.unshift(dividend);
           input.unshift(divisor);
@@ -276,10 +227,11 @@ describe('Migrations', () => {
     });
 
     describe('evaluatePush()', () => {
-      Fuzz.test(
+      fuzz2(
+        stackFuzzer,
+        Fuzzer.float,
         'matches original implementation',
-        stackPushFuzzer(),
-        ({ stack, value }: StackPushInput) => {
+        (stack, value) => {
           const input = Array.from(stack);
           input.unshift(value);
 
@@ -290,23 +242,20 @@ describe('Migrations', () => {
     });
 
     describe('evaluate()', () => {
-      Fuzz.test(
+      fuzz2(
+        Fuzzer.array(operationFuzzer).map(Stack),
+        stackFuzzer,
         'matches original implementation',
-        evaluatorFuzzer(),
-        ({ operations, stack: arr }: EvaluatorInput) => {
-          const stack = Stack(arr);
-          const ops = Stack(operations);
-
+        (ops, stack) => {
           expect(migrated(Internal.evaluate(ops, stack)))
-            .toEqual(referenceEvaluate(operations, stack.toArray()));
+            .toEqual(referenceEvaluate(ops.toArray(), stack.toArray()));
         },
       );
 
-      Fuzz.test(
-        'matches original implementation when given no operations',
+      fuzz(
         stackFuzzer,
-        (arr: Array<number>) => {
-          const stack = Stack(arr);
+        'matches original implementation when given no operations',
+        (stack) => {
           expect(Internal.evaluate(Stack(), stack).toArray())
             .toEqual(referenceEvaluate([], stack.toArray())); 
         },
