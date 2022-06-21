@@ -21,19 +21,26 @@ const DECIMAL_PLACES = 2;
 const DECIMAL_SHIFT_FACTOR = 10 ** DECIMAL_PLACES;
 
 function toPrettyPrintNumber(n: number): string {
-  const shiftedResult = n * DECIMAL_SHIFT_FACTOR;
-  const remainingFraction = shiftedResult % 1;
+  const shiftedN = n * DECIMAL_SHIFT_FACTOR;
+  const remainder = shiftedN % 1;
 
-  if (remainingFraction !== 0) {
-    const stringyShiftedResult = Math.round(shiftedResult).toString();
-    const wholePart = stringyShiftedResult.slice(0, -DECIMAL_PLACES);
-    const fractionalPart = stringyShiftedResult.slice(-DECIMAL_PLACES).replace(/0+$/, '');
-    const stringyResult = `${wholePart === '' ? '0' : wholePart}.${fractionalPart}`;
-
-    return stringyResult;
+  if (remainder === 0) {
+    return n.toString();
   }
   else {
-    return n.toString();
+    const digits = Math.round(shiftedN).toString();
+    const whole = digits.slice(0, -DECIMAL_PLACES);
+    const fraction = digits.slice(-DECIMAL_PLACES).replace(/0+$/, '');
+
+    const printedWhole = whole !== ''
+      ? whole
+      : '0';
+
+    const printedFraction = fraction !== ''
+      ? `.${fraction}`
+      : '';
+
+    return `${printedWhole}${printedFraction}`;
   }
 }
 
