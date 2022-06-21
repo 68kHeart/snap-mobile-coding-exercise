@@ -3,6 +3,10 @@
 import Readline from 'node:readline';
 import RPN from './lib/rpn';
 
+// Constants
+
+const DECIMAL_PLACES = 2;
+
 // Initialize data model
 
 let stack = RPN.initialModel;
@@ -29,7 +33,20 @@ repl.on('line', (commands: string) => {
   }
   else {
     stack = newStack;
-    console.log(stack.first());
+    const shiftedResult = (stack.first() ?? 0) * (10 ** DECIMAL_PLACES);
+    const remainingFraction = shiftedResult % 1;
+
+    if (remainingFraction !== 0) {
+      const stringyShiftedResult = (shiftedResult - remainingFraction).toString();
+      const wholePart = stringyShiftedResult.slice(0, -DECIMAL_PLACES);
+      const fractionalPart = stringyShiftedResult.slice(wholePart.length);
+      const stringyResult = `${wholePart === '' ? '0' : wholePart}.${fractionalPart}`;
+
+      console.log(stringyResult);
+    }
+    else {
+      console.log(stack.first());
+    }
   }
 
   repl.prompt();
