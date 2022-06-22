@@ -1,5 +1,5 @@
 import { Stack } from 'immutable';
-import Internal from './rpn/internal';
+import Internal from './internal';
 
 // MODEL
 
