@@ -224,6 +224,19 @@ export class Fuzzer<Type> {
     ));
   }
 
+  /** Create a new fuzzer based on the results of the last fuzzer.
+   *
+   * Useful when you need more control than `.map()` gives you for transforming
+   * a fuzzer. Say you want to transform an `intRange` into a more complex type
+   * that needs to also do some fuzzing of its own. This lets you do that!
+   */
+  public static andThen <A, B>(
+    fuzzer: Fuzzer<A>,
+    callback: (value: A) => Fuzzer<B>,
+  ): Fuzzer<B> {
+    return callback(fuzzer.generate());
+  }
+
   // INSTANCE METHODS
   //
   // These just allow a fluent interface on Fuzzers; they're just the static
@@ -325,6 +338,12 @@ export class Fuzzer<Type> {
       fuzzerH,
       mapper,
     );
+  }
+
+  public andThen <B>(
+    callback: (value: Type) => Fuzzer<B>,
+  ): Fuzzer<B> {
+    return callback(this.generate());
   }
 
   public generate(): Type {
