@@ -7,25 +7,25 @@ import { Fuzzer, fuzz, fuzz2, fuzz3 } from './jest-fuzzer';
 
 const stackFuzzer = Fuzzer.array(Fuzzer.float).map(Stack);
 
-const operationFuzzer = Fuzzer.intRange(1, 5).map((kind) => {
+const operationFuzzer = Fuzzer.intRange(1, 5).andThen((kind) => {
   switch (kind) {
-    case 1: return Op.Add;
-    case 2: return Op.Subtract;
-    case 3: return Op.Multiply;
-    case 4: return Op.Divide;
+    case 1: return Fuzzer.constant(Op.Add);
+    case 2: return Fuzzer.constant(Op.Subtract);
+    case 3: return Fuzzer.constant(Op.Multiply);
+    case 4: return Fuzzer.constant(Op.Divide);
     // Op.Push can fail if the number is not finite, but we know it will be.
-    case 5: return Op.Push(Fuzzer.float.generate()) as Operation;
+    case 5: return Fuzzer.float.map(Op.Push) as Fuzzer<Operation>;
     default: throw('Impossible state');
   }
 });
 
-const symbolFuzzer = Fuzzer.intRange(1, 5).map((kind) => {
+const symbolFuzzer = Fuzzer.intRange(1, 5).andThen((kind) => {
   switch (kind) {
-    case 1: return '+';
-    case 2: return '-';
-    case 3: return '*';
-    case 4: return '/';
-    case 5: return Fuzzer.float.generate().toString();
+    case 1: return Fuzzer.constant('+');
+    case 2: return Fuzzer.constant('-');
+    case 3: return Fuzzer.constant('*');
+    case 4: return Fuzzer.constant('/');
+    case 5: return Fuzzer.float.map(String);
     default: throw('Impossible state');
   }
 });
