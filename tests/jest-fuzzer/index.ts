@@ -8,6 +8,13 @@ function sum(ns: Array<number>): number {
 
 // FUZZERS
 
+/* We use a unique symbol that's not exported as the name of the Fuzzer value
+ * generator. We do need the method to be public since the `fuzz*()` functions
+ * need to access it, but we can certainly discourage its use outside of this
+ * library. Make the nice paths easy and the bad paths hard!
+ */
+const $generate = Symbol('Fuzzer/generate');
+
 export class Fuzzer<Type> {
   private generator: (prng: number) => Type;
 
@@ -42,7 +49,7 @@ export class Fuzzer<Type> {
    */
   public static float: Fuzzer<number> = new Fuzzer((prng) => {
     // Use int fuzzer to favor smaller values
-    const whole = Fuzzer.int.generate();
+    const whole = Fuzzer.int[$generate]();
 
     return whole + prng;
   });
@@ -53,10 +60,10 @@ export class Fuzzer<Type> {
    */
   public static string: Fuzzer<string> = new Fuzzer((prng) => {
     // Favor shorter strings
-    const length = Fuzzer.intRange(0, 1000).generate();
+    const length = Fuzzer.intRange(0, 1000)[$generate]();
 
     return Array(length).fill(null).map(() => {
-      const char = Fuzzer.intRange(32, 126).generate(); // printable ASCII
+      const char = Fuzzer.intRange(32, 126)[$generate](); // printable ASCII
 
       return String.fromCharCode(char);
     }).join('');
@@ -79,7 +86,7 @@ export class Fuzzer<Type> {
       // Favor smaller arrays
       const length = Math.floor(400 * (prng ** 30));
 
-      return Array(length).fill(null).map(() => fuzzer.generate());
+      return Array(length).fill(null).map(() => fuzzer[$generate]());
     });
   }
 
@@ -98,7 +105,7 @@ export class Fuzzer<Type> {
     fuzzer: Fuzzer<A>,
     mapper: (value: A) => B,
   ): Fuzzer<B> {
-    return new Fuzzer((prng) => mapper(fuzzer.generate()));
+    return new Fuzzer((prng) => mapper(fuzzer[$generate]()));
   }
 
   /** Transforms the result of two fuzzers. */
@@ -107,7 +114,7 @@ export class Fuzzer<Type> {
     fuzzerB: Fuzzer<B>,
     mapper: (a: A, b: B) => C,
   ): Fuzzer<C> {
-    return new Fuzzer((prng) => mapper(fuzzerA.generate(), fuzzerB.generate()));
+    return new Fuzzer((prng) => mapper(fuzzerA[$generate](), fuzzerB[$generate]()));
   }
 
   /** Transforms the result of three fuzzers. */
@@ -118,9 +125,9 @@ export class Fuzzer<Type> {
     mapper: (a: A, b: B, c: C) => D,
   ): Fuzzer<D> {
     return new Fuzzer((prng) => mapper(
-      fuzzerA.generate(),
-      fuzzerB.generate(),
-      fuzzerC.generate(),
+      fuzzerA[$generate](),
+      fuzzerB[$generate](),
+      fuzzerC[$generate](),
     ));
   }
 
@@ -133,10 +140,10 @@ export class Fuzzer<Type> {
     mapper: (a: A, b: B, c: C, d: D) => E,
   ): Fuzzer<E> {
     return new Fuzzer((prng) => mapper(
-      fuzzerA.generate(),
-      fuzzerB.generate(),
-      fuzzerC.generate(),
-      fuzzerD.generate(),
+      fuzzerA[$generate](),
+      fuzzerB[$generate](),
+      fuzzerC[$generate](),
+      fuzzerD[$generate](),
     ));
   }
 
@@ -150,11 +157,11 @@ export class Fuzzer<Type> {
     mapper: (a: A, b: B, c: C, d: D, e: E) => F,
   ): Fuzzer<F> {
     return new Fuzzer((prng) => mapper(
-      fuzzerA.generate(),
-      fuzzerB.generate(),
-      fuzzerC.generate(),
-      fuzzerD.generate(),
-      fuzzerE.generate(),
+      fuzzerA[$generate](),
+      fuzzerB[$generate](),
+      fuzzerC[$generate](),
+      fuzzerD[$generate](),
+      fuzzerE[$generate](),
     ));
   }
 
@@ -169,12 +176,12 @@ export class Fuzzer<Type> {
     mapper: (a: A, b: B, c: C, d: D, e: E, f: F) => G,
   ): Fuzzer<G> {
     return new Fuzzer((prng) => mapper(
-      fuzzerA.generate(),
-      fuzzerB.generate(),
-      fuzzerC.generate(),
-      fuzzerD.generate(),
-      fuzzerE.generate(),
-      fuzzerF.generate(),
+      fuzzerA[$generate](),
+      fuzzerB[$generate](),
+      fuzzerC[$generate](),
+      fuzzerD[$generate](),
+      fuzzerE[$generate](),
+      fuzzerF[$generate](),
     ));
   }
 
@@ -190,13 +197,13 @@ export class Fuzzer<Type> {
     mapper: (a: A, b: B, c: C, d: D, e: E, f: F, g: G) => H,
   ): Fuzzer<H> {
     return new Fuzzer((prng) => mapper(
-      fuzzerA.generate(),
-      fuzzerB.generate(),
-      fuzzerC.generate(),
-      fuzzerD.generate(),
-      fuzzerE.generate(),
-      fuzzerF.generate(),
-      fuzzerG.generate(),
+      fuzzerA[$generate](),
+      fuzzerB[$generate](),
+      fuzzerC[$generate](),
+      fuzzerD[$generate](),
+      fuzzerE[$generate](),
+      fuzzerF[$generate](),
+      fuzzerG[$generate](),
     ));
   }
 
@@ -213,14 +220,14 @@ export class Fuzzer<Type> {
     mapper: (a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H) => I,
   ): Fuzzer<I> {
     return new Fuzzer((prng) => mapper(
-      fuzzerA.generate(),
-      fuzzerB.generate(),
-      fuzzerC.generate(),
-      fuzzerD.generate(),
-      fuzzerE.generate(),
-      fuzzerF.generate(),
-      fuzzerG.generate(),
-      fuzzerH.generate(),
+      fuzzerA[$generate](),
+      fuzzerB[$generate](),
+      fuzzerC[$generate](),
+      fuzzerD[$generate](),
+      fuzzerE[$generate](),
+      fuzzerF[$generate](),
+      fuzzerG[$generate](),
+      fuzzerH[$generate](),
     ));
   }
 
@@ -234,7 +241,7 @@ export class Fuzzer<Type> {
     fuzzer: Fuzzer<A>,
     callback: (value: A) => Fuzzer<B>,
   ): Fuzzer<B> {
-    return callback(fuzzer.generate());
+    return callback(fuzzer[$generate]());
   }
 
   // INSTANCE METHODS
@@ -343,11 +350,11 @@ export class Fuzzer<Type> {
   public andThen <B>(
     callback: (value: Type) => Fuzzer<B>,
   ): Fuzzer<B> {
-    return callback(this.generate());
+    return callback(this[$generate]());
   }
 
-  public generate(): Type {
-    return Fuzzer.generate(this);
+  public [$generate](): Type {
+    return this.generator(Math.random());
   }
 }
 
@@ -362,9 +369,9 @@ export function fuzz <A>(
 ): void {
   test(desc, () => {
     for (let i = 0; i < TEST_PASSES; i += 1) {
-      const a = fuzzer.generate();
+      const a = fuzzer[$generate]();
 
-      func(fuzzer.generate());
+      func(fuzzer[$generate]());
     }
   });
 }
@@ -377,7 +384,7 @@ export function fuzz2 <A, B>(
 ): void {
   test(desc, () => {
     for (let i = 0; i < TEST_PASSES; i += 1) {
-      func(fuzzerA.generate(), fuzzerB.generate());
+      func(fuzzerA[$generate](), fuzzerB[$generate]());
     }
   });
 }
@@ -391,7 +398,7 @@ export function fuzz3 <A, B, C>(
 ): void {
   test(desc, () => {
     for (let i = 0; i < TEST_PASSES; i += 1) {
-      func(fuzzerA.generate(), fuzzerB.generate(), fuzzerC.generate());
+      func(fuzzerA[$generate](), fuzzerB[$generate](), fuzzerC[$generate]());
     }
   });
 }
@@ -402,7 +409,7 @@ export function fuzzExplained <A>(
   func: (value: A) => void,
 ): void {
   for (let i = 0; i < TEST_PASSES; i += 1) {
-    const a = fuzzer.generate();
+    const a = fuzzer[$generate]();
 
     test(`${desc} (input: ${String(a)})`, () => {
       func(a);
@@ -417,8 +424,8 @@ export function fuzz2Explained <A, B>(
   func: (a: A, b: B) => void,
 ): void {
   for (let i = 0; i < TEST_PASSES; i += 1) {
-    const a = fuzzerA.generate();
-    const b = fuzzerB.generate();
+    const a = fuzzerA[$generate]();
+    const b = fuzzerB[$generate]();
 
     test(`${desc} (inputs: "${String(a)}", "${String(b)})`, () => {
       func(a, b);
@@ -434,9 +441,9 @@ export function fuzz3Explained <A, B, C>(
   func: (a: A, b: B, c: C) => void,
 ): void {
   for (let i = 0; i < TEST_PASSES; i += 1) {
-    const a = fuzzerA.generate();
-    const b = fuzzerB.generate();
-    const c = fuzzerC.generate();
+    const a = fuzzerA[$generate]();
+    const b = fuzzerB[$generate]();
+    const c = fuzzerC[$generate]();
 
     test(
       `${desc} (inputs: "${String(a)}", "${String(b)}", "${String(c)})`,
