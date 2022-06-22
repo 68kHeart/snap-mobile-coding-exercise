@@ -363,8 +363,6 @@ export function fuzz <A>(
 ): void {
   test(desc, () => {
     for (let i = 0; i < TEST_PASSES; i += 1) {
-      const a = fuzzer[$generate]();
-
       func(fuzzer[$generate]());
     }
   });
