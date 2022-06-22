@@ -1,11 +1,5 @@
 declare const test: (name: string, fn: () => void) => void;
 
-// HELPERS
-
-function sum(ns: Array<number>): number {
-  return ns.reduce((result, n) => result + n, 0);
-}
-
 // FUZZERS
 
 /* We use a unique symbol that's not exported as the name of the Fuzzer value
